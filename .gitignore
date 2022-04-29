@@ -1,0 +1,13 @@
+*
+
+!*.go
+!*.mod
+!*.sum
+!*.html
+!*.template
+!*.xml
+!*.sh
+!*.md
+
+!.gitignore
+!LICENSE

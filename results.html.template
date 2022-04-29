@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+	<head>
+	</head>
+	<body>
+	{{range .}}
+	<a href="{{.Link}}">
+		<h2>{{.Title}}</h2>
+	</a>
+	<p>{{.Link}}</p>
+	<p>{{.Description}}</p>
+	<p>{{Intersperse .SearchEngines ", "}}</p>
+	{{end}}
+	</body>
+</html>

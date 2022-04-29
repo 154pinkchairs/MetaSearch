@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
+  <ShortName>MetaSearch</ShortName>
+  <Description>a privacy-respecting, hackable metasearch engine</Description>
+  <InputEncoding>UTF-8</InputEncoding>
+  <LongName>MetaSearch</LongName>
+    <Url rel="results" type="text/html" method="post" template="http://localhost:8080">
+        <Param name="q" value="{searchTerms}" />
+    </Url>
+  <Url type="application/opensearchdescription+xml"
+      rel="self"
+      template="/opensearch.xml" />
+</OpenSearchDescription>
