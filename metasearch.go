@@ -10,19 +10,7 @@ import (
 	"sync"
 )
 
-type result struct {
-	Title string
-	Link string
-	Description string
-	SearchEngines []string
-	score float64
-}
-
 type resultSlice []result
-
-type searchEngine interface {
-	search(string, chan <- result)
-}
 
 func mergeResults(r result, s result) (t result) {
 	t.Title = r.Title
@@ -109,5 +97,6 @@ func main() {
 		}
 	})
 
-	http.ListenAndServeTLS(":8080", tlsCertPath, tlsKeyPath, nil)
+	err = http.ListenAndServeTLS(":8080", tlsCertPath, tlsKeyPath, nil)
+	fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 }
