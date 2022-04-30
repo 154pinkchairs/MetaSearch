@@ -8,6 +8,9 @@
 !*.xml
 !*.sh
 !*.md
+!*.def
 
 !.gitignore
 !LICENSE
+
+config.go
