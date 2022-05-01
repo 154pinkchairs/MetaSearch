@@ -19,8 +19,7 @@ const (
 	indexPath = "index.html"
 	resultsTemplatePath = "results.html.template"
 	openSearchPath = "opensearch.xml"
-	tlsCertPath = "test.server.crt"
-	tlsKeyPath = "test.server.key"
+	faviconPath = "favicon.ico"
 )
 
 func listenAndServe() {
