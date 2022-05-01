@@ -1,5 +1,6 @@
 # Description
 A meta search engine I wrote because I was unhappy with the enormity of searx.
+My instance is hosted [here](https://search.chestergould.xyz), although I would ask that you host your own instead of actively using mine.
 
 # Config
 A default configuration is given in `config.go.def`.
