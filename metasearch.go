@@ -97,6 +97,5 @@ func main() {
 		}
 	})
 
-	err = http.ListenAndServeTLS(port, tlsCertPath, tlsKeyPath, nil)
-	fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+	listenAndServe()
 }

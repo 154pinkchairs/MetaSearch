@@ -5,7 +5,6 @@
 !*.sum
 !*.html
 !*.template
-!*.xml
 !*.sh
 !*.md
 !*.def
