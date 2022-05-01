@@ -10,7 +10,7 @@ If you would like to serve the site in a differ manner, using https instead of h
 
 # Other Def Files
 The other files ending with `.def` are also meant to be modified.
-Simply copy them into a file with the `.def` suffix removed and make whatever changes desiredd.
+Simply copy them into a file with the `.def` suffix removed and make whatever changes desired.
 
 `opensearch.xml.def` contains a default [OpenSearch](https://developer.mozilla.org/en-US/docs/Web/OpenSearch) description.
 Modify this with the appropriate information to allow your instance of MetaSearch to be added as a search engine to your browser.
