@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
+	"os"
 
 	"golang.org/x/net/html"
 )
@@ -21,8 +23,34 @@ type result struct {
 }
 
 type duckduckgo struct{}
-
 type google struct{}
+type bing struct{}
+
+func getRequest(url string, values url.Values, header http.Header) (*html.Node, error) {
+	req, err := http.NewRequest("GET", url + values.Encode(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header = header
+
+	resp, err := (&http.Client{}).Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	root, err := html.Parse(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return root, nil
+}
+
+func rankScore(rank int) float64 {
+	return 1.0 / (60.0 + float64(rank))
+}
 
 func (_ duckduckgo) search(q string, resultCh chan <- result) {
 	vals := url.Values(map[string][]string{
@@ -73,7 +101,7 @@ func (_ duckduckgo) search(q string, resultCh chan <- result) {
 		}
 
 		r.SearchEngines = []string{"duckduckgo"}
-		r.score = 1 / (60.0 + float64(rank))
+		r.score = rankScore(rank)
 
 		resultCh <- r
 
@@ -82,29 +110,15 @@ func (_ duckduckgo) search(q string, resultCh chan <- result) {
 }
 
 func (_ google) search(q string, resultCh chan <- result) {
-	vals := url.Values{
-		"q": {q},
-		"gbv": {"1"},
-	}
-
-	searchUrl := "https://www.google.com/search?" + vals.Encode()
-
-	req, err := http.NewRequest("GET", searchUrl, nil)
-	if err != nil {
-		return
-	}
-
-	req.Header.Set("User-Agent", userAgent)
-	req.Header.Set("Host", "www.google.com")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return
-	}
-	defer resp.Body.Close()
-
-	root, err := html.Parse(resp.Body)
+	root, err := getRequest("https://www.google.com/search?",
+		url.Values{
+			"q": {q},
+			"gbv": {"1"},
+		},
+		http.Header{
+			"User-Agent": {userAgent},
+			"Host": {"www.google.com"},
+		})
 	if err != nil {
 		return
 	}
@@ -114,10 +128,10 @@ func (_ google) search(q string, resultCh chan <- result) {
 	go genWithAttributeValueShallow(root, "class", "ZINbbc luh4tb xpd O9g5cc uUPGi", nodeCh)
 
 	rank := 0
-	for resultnode := range nodeCh {
+	for resultNode := range nodeCh {
 		var r result
 
-		headerNode := getWithAttributeValueFirst(resultnode, "class", "egMi0 kCrYT")
+		headerNode := getWithAttributeValueFirst(resultNode, "class", "egMi0 kCrYT")
 
 		linkNode := getElementFirst(headerNode, "a")
 
@@ -134,14 +148,62 @@ func (_ google) search(q string, resultCh chan <- result) {
 
 		r.Title = getText(titleNode)
 
-		descriptionNode := getWithAttributeValueFirst(resultnode, "class", "BNeawe s3v9rd AP7Wnd")
+		descriptionNode := getWithAttributeValueFirst(resultNode, "class", "BNeawe s3v9rd AP7Wnd")
 
 		if descriptionNode != nil {
 			r.Description = getText(descriptionNode)
 		}
 
 		r.SearchEngines = []string{"google"}
-		r.score = 1 / (60.0 + float64(rank))
+		r.score = rankScore(rank)
+
+		resultCh <- r
+
+		rank += 1
+	}
+}
+
+func (_ bing) search(q string, resultCh chan <- result) {
+	root, err := getRequest("https://www.bing.com/search?",
+		url.Values{
+			"q": {q},
+		},
+		http.Header{
+			"User-Agent": {userAgent},
+			"Host": {"www.bing.com"},
+		})
+	if err != nil {
+		return
+	}
+
+	resultsNode := getId(root, "b_results")
+
+	if resultsNode == nil {
+		return
+	}
+
+	nodeCh := make(chan *html.Node, 1)
+
+	go genDirectChildrenWithAttribute(resultsNode, "class", "b_algo", nodeCh)
+
+	rank := 0
+	for resultNode := range nodeCh {
+		var r result
+
+		headerNode := getElementFirst(resultNode, "a")
+		r.Link = getAttribute(headerNode, "href")
+		r.Title = getText(headerNode)
+
+		descriptionNode := getWithAttributeValueFirst(resultNode, "class", "lineclamp4")
+		if descriptionNode != nil {
+			r.Description = getText(descriptionNode)
+		}
+
+		r.SearchEngines = []string{"bing"}
+
+		r.score = rankScore(rank)
+
+		fmt.Fprintf(os.Stderr, "%v\n", r)
 
 		resultCh <- r
 

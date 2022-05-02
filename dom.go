@@ -3,7 +3,9 @@ package main
 import (
 	"strings"
 
-	"golang.org/x/net/html" )
+	"golang.org/x/net/html"
+)
+
 func hasClass(n *html.Node, class string) bool {
 	if n.Type == html.ElementNode {
 		for _, attr := range n.Attr {
@@ -12,6 +14,24 @@ func hasClass(n *html.Node, class string) bool {
 
 				for _, nclass := range classes {
 					if nclass == class {
+						return true
+					}
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+func hasId(n *html.Node, id string) bool {
+	if n.Type == html.ElementNode {
+		for _, attr := range n.Attr {
+			if attr.Key == "id" {
+				ids := strings.Split(attr.Val, " ")
+
+				for _, nid := range ids {
+					if nid == id {
 						return true
 					}
 				}
@@ -63,6 +83,22 @@ func getClassFirst(n *html.Node, class string) *html.Node {
 	return nil
 }
 
+func getId(n *html.Node, id string) *html.Node {
+	if hasId(n, id) {
+		return n
+	}
+
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		o := getId(c, id)
+
+		if o != nil {
+			return o
+		}
+	}
+
+	return nil
+}
+
 // If val is "" then matches all nodes
 func genWithAttributeValueShallowWorker(n *html.Node, attr string, val string, ch chan <- *html.Node) {
 	if n.Type == html.ElementNode && getAttribute(n, attr) == val {
@@ -93,6 +129,15 @@ func getWithAttributeValueFirst(n *html.Node, attr string, val string) *html.Nod
 	}
 
 	return nil
+}
+
+func genDirectChildrenWithAttribute(n *html.Node, attr string, val string, ch chan <- *html.Node) {
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		if c.Type == html.ElementNode && getAttribute(c, attr) == val {
+			ch <- c
+		}
+	}
+	close(ch)
 }
 
 func getElementFirst(n *html.Node, elem string) *html.Node {
