@@ -3,9 +3,7 @@ package main
 import (
 	"strings"
 
-	"golang.org/x/net/html"
-)
-
+	"golang.org/x/net/html" )
 func hasClass(n *html.Node, class string) bool {
 	if n.Type == html.ElementNode {
 		for _, attr := range n.Attr {
@@ -34,20 +32,19 @@ func getAttribute(n *html.Node, key string) string {
 	return ""
 }
 
-func getClassShallow(n *html.Node, class string) []*html.Node {
+func genClassShallowWorker(n *html.Node, class string, ch chan <- *html.Node)  {
 	if hasClass(n, class) {
-		return []*html.Node{n}
+		ch <- n
 	}
 	
-	nodes := make([]*html.Node, 0)
-
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		newnodes := getClassShallow(c, class)
-
-		nodes = append(nodes, newnodes...)
+		genClassShallowWorker(c, class, ch)
 	}
+}
 
-	return nodes
+func genClassShallow(n *html.Node, class string, ch chan <- *html.Node) {
+	genClassShallowWorker(n, class, ch)
+	close(ch)
 }
 
 func getClassFirst(n *html.Node, class string) *html.Node {
@@ -67,20 +64,19 @@ func getClassFirst(n *html.Node, class string) *html.Node {
 }
 
 // If val is "" then matches all nodes
-func getWithAttributeValueShallow(n *html.Node, attr string, val string) []*html.Node {
+func genWithAttributeValueShallowWorker(n *html.Node, attr string, val string, ch chan <- *html.Node) {
 	if n.Type == html.ElementNode && getAttribute(n, attr) == val {
-		return []*html.Node{n}
+		ch <- n
 	}
-
-	nodes := make([]*html.Node, 0)
 
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
-		newnodes := getWithAttributeValueShallow(c, attr, val)
-
-		nodes = append(nodes, newnodes...)
+		genWithAttributeValueShallowWorker(c, attr, val, ch)
 	}
+}
 
-	return nodes
+func genWithAttributeValueShallow(n *html.Node, attr string, val string, ch chan <- *html.Node) {
+	genWithAttributeValueShallowWorker(n, attr, val, ch)
+	close(ch)
 }
 
 func getWithAttributeValueFirst(n *html.Node, attr string, val string) *html.Node {

@@ -53,9 +53,12 @@ func (_ duckduckgo) search(q string, resultCh chan <- result) {
 		return
 	}
 
-	resultNodes := getClassShallow(root, "result")
+	nodeCh := make(chan *html.Node, 1)
 
-	for i, resultNode := range resultNodes {
+	go genClassShallow(root, "result", nodeCh)
+
+	rank := 0
+	for resultNode := range nodeCh {
 		var r result
 
 		linkNode := getClassFirst(resultNode, "result__a")
@@ -70,9 +73,11 @@ func (_ duckduckgo) search(q string, resultCh chan <- result) {
 		}
 
 		r.SearchEngines = []string{"duckduckgo"}
-		r.score = 1 / (60.0 + float64(i))
+		r.score = 1 / (60.0 + float64(rank))
 
 		resultCh <- r
+
+		rank += 1
 	}
 }
 
@@ -104,9 +109,12 @@ func (_ google) search(q string, resultCh chan <- result) {
 		return
 	}
 
-	resultNodes := getWithAttributeValueShallow(root, "class", "ZINbbc luh4tb xpd O9g5cc uUPGi")
+	nodeCh := make(chan *html.Node, 1)
 
-	for i, resultnode := range resultNodes {
+	go genWithAttributeValueShallow(root, "class", "ZINbbc luh4tb xpd O9g5cc uUPGi", nodeCh)
+
+	rank := 0
+	for resultnode := range nodeCh {
 		var r result
 
 		headerNode := getWithAttributeValueFirst(resultnode, "class", "egMi0 kCrYT")
@@ -133,8 +141,10 @@ func (_ google) search(q string, resultCh chan <- result) {
 		}
 
 		r.SearchEngines = []string{"google"}
-		r.score = 1 / (60.0 + float64(i))
+		r.score = 1 / (60.0 + float64(rank))
 
 		resultCh <- r
+
+		rank += 1
 	}
 }

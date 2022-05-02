@@ -59,7 +59,7 @@ func main() {
 		case "POST":
 			q := r.FormValue("q")
 
-			resultCh := make(chan result)
+			resultCh := make(chan result, len(searchEngines))
 			var wg sync.WaitGroup
 
 			wg.Add(len(searchEngines))
