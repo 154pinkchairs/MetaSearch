@@ -103,6 +103,7 @@ func getId(n *html.Node, id string) *html.Node {
 func genWithAttributeValueShallowWorker(n *html.Node, attr string, val string, ch chan <- *html.Node) {
 	if n.Type == html.ElementNode && getAttribute(n, attr) == val {
 		ch <- n
+	} else if n.Type == html.ElementNode && getAttribute(n, attr) != "" {
 	}
 
 	for c := n.FirstChild; c != nil; c = c.NextSibling {

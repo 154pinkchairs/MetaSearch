@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
-	"os"
 
 	"golang.org/x/net/html"
 )
@@ -125,7 +123,7 @@ func (_ google) search(q string, resultCh chan <- result) {
 
 	nodeCh := make(chan *html.Node, 1)
 
-	go genWithAttributeValueShallow(root, "class", "ZINbbc luh4tb xpd O9g5cc uUPGi", nodeCh)
+	go genWithAttributeValueShallow(root, "class", "Gx5Zad fP1Qef xpd EtOod pkphOe", nodeCh)
 
 	rank := 0
 	for resultNode := range nodeCh {
@@ -202,8 +200,6 @@ func (_ bing) search(q string, resultCh chan <- result) {
 		r.SearchEngines = []string{"bing"}
 
 		r.score = rankScore(rank)
-
-		fmt.Fprintf(os.Stderr, "%v\n", r)
 
 		resultCh <- r
 
