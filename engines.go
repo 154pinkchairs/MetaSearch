@@ -188,11 +188,24 @@ func (_ bing) search(q string, resultCh chan <- result) {
 	for resultNode := range nodeCh {
 		var r result
 
+		/*
 		headerNode := getElementFirst(resultNode, "a")
 		r.Link = getAttribute(headerNode, "href")
 		r.Title = getText(headerNode)
 
 		descriptionNode := getWithAttributeValueFirst(resultNode, "class", "lineclamp4")
+		if descriptionNode != nil {
+			r.Description = getText(descriptionNode)
+		}
+		*/
+
+		titleNode := getElementFirst(resultNode, "h2")
+		r.Title = getText(titleNode)
+
+		linkNode := getWithAttributeValueFirst(resultNode, "class", "b_attribution")
+		r.Link = getText(linkNode)
+
+		descriptionNode := getElementFirst(resultNode, "p")
 		if descriptionNode != nil {
 			r.Description = getText(descriptionNode)
 		}
