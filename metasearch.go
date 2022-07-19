@@ -34,6 +34,11 @@ func (ra resultSlice) Less(i int, j int) bool {
 	return ra[i].score > ra[j].score
 }
 
+type results struct {
+	Query string
+	Results resultSlice
+}
+
 func main() {
 	rt := template.New("Result Template")
 
@@ -86,13 +91,15 @@ func main() {
 				}
 			}
 
-			results := make([]result, 0, len(mergedResults))
+			var results results
+			results.Query = q
+			results.Results = make([]result, 0, len(mergedResults))
 
 			for _, result := range mergedResults {
-				results = append(results, result)
+				results.Results = append(results.Results, result)
 			}
 
-			sort.Sort(resultSlice(results))
+			sort.Sort(resultSlice(results.Results))
 
 			err := rt.ExecuteTemplate(w, resultsTemplatePath, results)
 			if err != nil {
