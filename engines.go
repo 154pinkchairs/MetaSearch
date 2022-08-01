@@ -50,6 +50,16 @@ func rankScore(rank int) float64 {
 	return 1.0 / (60.0 + float64(rank))
 }
 
+func normalizeURL(u string) string {
+	url, _ := url.Parse(u)
+
+	if url.Path == "/" {
+		url.Path = ""
+	}
+
+	return url.String()
+}
+
 func (_ duckduckgo) search(q string, resultCh chan <- result) {
 	vals := url.Values(map[string][]string{
 		"q": {q},
@@ -89,7 +99,7 @@ func (_ duckduckgo) search(q string, resultCh chan <- result) {
 
 		linkNode := getClassFirst(resultNode, "result__a")
 
-		r.Link = getAttribute(linkNode, "href")
+		r.Link = normalizeURL(getAttribute(linkNode, "href"))
 		r.Title = getText(linkNode)
 
 		snippetNode := getClassFirst(resultNode, "result__snippet")
@@ -140,7 +150,7 @@ func (_ google) search(q string, resultCh chan <- result) {
 			continue
 		}
 
-		r.Link = hrefVals.Get("/url?q")
+		r.Link = normalizeURL(hrefVals.Get("/url?q"))
 
 		titleNode := getWithAttributeValueFirst(headerNode, "class", "BNeawe vvjwJb AP7Wnd")
 
@@ -195,7 +205,7 @@ func (_ bing) search(q string, resultCh chan <- result) {
 		if linkNode == nil {
 			continue
 		}
-		r.Link = getText(linkNode)
+		r.Link = normalizeURL(getText(linkNode))
 
 		descriptionNode := getElementFirst(resultNode, "p")
 		if descriptionNode != nil {
