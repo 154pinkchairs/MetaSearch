@@ -9,23 +9,25 @@ import (
 )
 
 type searchEngine interface {
-	search(string, chan <- result)
+	search(string, chan<- result)
 }
 
 type result struct {
-	Title string
-	Link string
-	Description string
+	Title         string
+	Link          string
+	Thumbnail     string
+	Description   string
 	SearchEngines []string
-	score float64
+	score         float64
 }
 
 type duckduckgo struct{}
 type google struct{}
 type bing struct{}
+type duckduckgoimages struct{}
 
 func getRequest(url string, values url.Values, header http.Header) (*html.Node, error) {
-	req, err := http.NewRequest("GET", url + values.Encode(), nil)
+	req, err := http.NewRequest("GET", url+values.Encode(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +62,9 @@ func normalizeURL(u string) string {
 	return url.String()
 }
 
-func (_ duckduckgo) search(q string, resultCh chan <- result) {
+var userAgent string = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.87 Safari/537.36"
+
+func (_ duckduckgo) search(q string, resultCh chan<- result) {
 	vals := url.Values(map[string][]string{
 		"q": {q},
 		"b": {""},
@@ -117,15 +121,74 @@ func (_ duckduckgo) search(q string, resultCh chan <- result) {
 	}
 }
 
-func (_ google) search(q string, resultCh chan <- result) {
+// create a new duckduckgo images search engine
+func (_ duckduckgoimages) search(q string, resultCh chan<- result) {
+	vals := url.Values(map[string][]string{
+		"q":   {q},
+		"va":  {"j"},
+		"t":   {"hc"},
+		"iar": {"images"},
+		"iax": {"images"},
+		"ia":  {"images"},
+	})
+
+	//make a request to duckduckgo images
+	req, err := http.NewRequest("POST", "https://duckduckgo.com/", strings.NewReader(vals.Encode()))
+	if err != nil {
+		return
+	}
+	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", "https://duckduckgo.com")
+	req.Header.Set("Referer", "https://duckduckgo.com")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	root, err := html.Parse(resp.Body)
+	if err != nil {
+		return
+	}
+
+	nodeCh := make(chan *html.Node, 1)
+
+	go genClassShallow(root, "result", nodeCh)
+
+	rank := 0
+	for resultNode := range nodeCh {
+		var r result
+
+		linkNode := getClassFirst(resultNode, "result__a")
+
+		r.Link = normalizeURL(getAttribute(linkNode, "href"))
+		r.Thumbnail = getAttribute(linkNode, "src")
+		r.Title = getText(linkNode)
+		r.Description = getText(getClassFirst(resultNode, "result__snippet"))
+
+		r.SearchEngines = []string{"duckduckgoimages"}
+		r.score = rankScore(rank)
+
+		resultCh <- r
+
+		rank += 1
+
+	}
+}
+
+func (_ google) search(q string, resultCh chan<- result) {
 	root, err := getRequest("https://www.google.com/search?",
 		url.Values{
-			"q": {q},
+			"q":   {q},
 			"gbv": {"1"},
 		},
 		http.Header{
 			"User-Agent": {userAgent},
-			"Host": {"www.google.com"},
+			"Host":       {"www.google.com"},
 		})
 	if err != nil {
 		return
@@ -171,14 +234,14 @@ func (_ google) search(q string, resultCh chan <- result) {
 	}
 }
 
-func (_ bing) search(q string, resultCh chan <- result) {
+func (_ bing) search(q string, resultCh chan<- result) {
 	root, err := getRequest("https://www.bing.com/search?",
 		url.Values{
 			"q": {q},
 		},
 		http.Header{
 			"User-Agent": {userAgent},
-			"Host": {"www.bing.com"},
+			"Host":       {"www.bing.com"},
 		})
 	if err != nil {
 		return

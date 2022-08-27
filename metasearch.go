@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -22,6 +23,27 @@ func mergeResults(r result, s result) (t result) {
 	return
 }
 
+//declare an imgres struct
+type imgres struct {
+	Link        string
+	Description string
+	Thumbnail   string
+	score       float64
+}
+
+type imgResultSlice []imgres
+
+func mergeImgResults(r imgres, s imgres) (t imgres) {
+	t.Link = r.Link
+	t.Description = r.Description
+	t.Thumbnail = r.Thumbnail
+	t.score = r.score + s.score
+
+	return
+}
+
+//declare a function to get the image results from the search engines
+
 func (ra resultSlice) Len() int {
 	return len(ra)
 }
@@ -35,14 +57,27 @@ func (ra resultSlice) Less(i int, j int) bool {
 }
 
 type results struct {
-	Query string
+	Query   string
 	Results resultSlice
+}
+
+func listenAndServe(addr string, handler http.Handler) {
+	server := &http.Server{
+		Addr:    addr,
+		Handler: handler,
+	}
+
+	server.ListenAndServe()
 }
 
 func main() {
 	rt := template.New("Result Template")
-
+	searchEngines := []searchEngine{duckduckgo{}, google{}, bing{}, duckduckgoimages{}}
 	rt.Funcs(template.FuncMap{"Intersperse": strings.Join})
+	resultsTemplatePath := "results.html"
+	openSearchPath := "opensearch.xml"
+	faviconPath := "favicon.ico"
+	indexPath := "index.html"
 
 	_, err := rt.ParseFiles(resultsTemplatePath)
 	if err != nil {
@@ -108,5 +143,26 @@ func main() {
 		}
 	})
 
-	listenAndServe()
+	//run listenAndServe on port 8080, reading the arguments from config.json
+	//open the config.json file
+	configFile, err := os.Open("config.json")
+	if err != nil {
+		fmt.Println(err)
+	}
+	//read the config.json file and pass the values to the listenAndServe function
+	decoder := json.NewDecoder(configFile)
+	configuration := struct {
+		Addr string
+	}{}
+	err = decoder.Decode(&configuration)
+	if err != nil {
+		fmt.Println(err)
+	}
+	//close the config.json file
+	configFile.Close()
+	//create a Http handler interface
+	handler := http.NewServeMux()
+	//run the listenAndServe function
+	listenAndServe(configuration.Addr, handler)
+
 }

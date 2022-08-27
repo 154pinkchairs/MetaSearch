@@ -4,6 +4,7 @@
 	</head>
 	<body>
 	{{range .}}
+  <a href="{{.Images}}">
 	<a href="{{.Link}}">
 		<h2>{{.Title}}</h2>
 	</a>
